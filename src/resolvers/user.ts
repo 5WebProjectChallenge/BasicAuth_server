@@ -4,7 +4,7 @@
     Mutation is for creating deleting content in DB
 */
 
-import { User } from "../entites/User";
+import { User } from "../entity/User";
 import { MyContext } from "src/types";
 import {
   Arg,
@@ -16,7 +16,6 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-import { argsToArgsConfig } from "graphql/type/definition";
 import argon from "argon2";
 import { COOKIE_NAME } from "../constants";
 
@@ -39,6 +38,15 @@ class FieldError {
 }
 
 @ObjectType()
+class UserResponse {
+  @Field(()=>User,{nullable:true})
+  user?:User
+
+  @Field(()=>FieldError,{nullable:true})
+  errors:[FieldError]
+}
+
+@ObjectType()
 class AuthResponse {
   @Field(() => [FieldError], { nullable: true })
   errors?: [FieldError];
@@ -58,21 +66,24 @@ export class UserResolver {
     return user;
   }
 
-  @Mutation(() => User, { nullable: true })
+  @Mutation(() => AuthResponse, { nullable: true })
   async signUp(
     @Ctx() { req }: MyContext,
     @Arg("details") details: UsernamePasswordTypes
   ): Promise<AuthResponse> {
     const { password, username } = details;
     const hasedPassword = await argon.hash(password);
+    console.log("hasedPassword",hasedPassword)
     const user = await User.create({
       username,
-      password: hasedPassword,
+      password: hasedPassword
     });
-
+    
     try {
       await user.save();
       req.session.userId = user.id;
+      console.log("USER CREATED",user)
+      return {user}
     } catch (e) {
       return {
         errors: [
@@ -85,7 +96,7 @@ export class UserResolver {
     }
   }
 
-  @Mutation(() => User, { nullable: true })
+  @Mutation(() => UserResponse)
   async login(
     @Ctx() { req }: MyContext,
     @Arg("details") details: UsernamePasswordTypes
@@ -93,7 +104,7 @@ export class UserResolver {
     const { username, password } = details;
 
     const user = await User.findOne({ username });
-
+    console.log("user",user)
     // check if user exist
     if (!user) {
       return {
@@ -105,9 +116,10 @@ export class UserResolver {
         ],
       };
     }
+    console.log("isValid",user.password)
 
     const isValid = await argon.verify(user.password, password);
-
+    console.log("isValid",isValid)
     // check if password is valid
     if (!isValid) {
       return {
@@ -121,7 +133,7 @@ export class UserResolver {
     }
 
     req.session.userId = user.id;
-
+    console.log("HERE")
     return { user };
   }
 

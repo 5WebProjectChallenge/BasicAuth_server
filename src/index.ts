@@ -16,7 +16,7 @@ import {
 import { buildSchema } from "type-graphql";
 import { MyContext } from "./types";
 import { UserResolver } from "./resolvers/user";
-import { User } from "./entites/User";
+import { User } from "./entity/User";
 
 const port = 4000;
 
@@ -30,6 +30,7 @@ const main = async () => {
     database: "logintest",
     logging: true,
     synchronize: true,
+    migrations: ['./migrations/*.js'],
     entities: [User],
   });
   const app = express();
