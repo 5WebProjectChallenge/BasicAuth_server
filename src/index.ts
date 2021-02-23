@@ -17,6 +17,7 @@ import { buildSchema } from "type-graphql";
 import { MyContext } from "./types";
 import { UserResolver } from "./resolvers/user";
 import { User } from "./entity/User";
+import cors from "cors";
 
 const port = 4000;
 
@@ -37,6 +38,13 @@ const main = async () => {
 
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
+  
+  app.use(
+    cors({
+      origin: ["http://localhost:3000"],
+      credentials: true,
+    })
+  );
 
   app.use(
     session({
